@@ -1,0 +1,4 @@
+ranking_method,precision,recall,f1,p_at_5,r_at_5,map,mrr,ndcg_at_5,mean_query_time_seconds
+TF-IDF only,0.6200,0.7667,0.6700,0.4000,0.7667,0.7278,1.0000,0.8265,0.0018597
+TF-IDF + PageRank,0.6200,0.7667,0.6700,0.4000,0.7667,0.7400,1.0000,0.8346,0.0015652
+TF-IDF + HITS authority,0.6200,0.7667,0.6700,0.4000,0.7667,0.7178,1.0000,0.8224,0.0014847
