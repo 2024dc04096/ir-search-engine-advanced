@@ -294,6 +294,52 @@ The system supports the following metrics:
 
 *Figure F.3: Line chart of P@K (blue), R@K (light blue), and NDCG@K (red) as K increases from 1 to 60. R@K rises steadily as more documents are retrieved. P@K stays near 0 for small K values because the relevant document is ranked lower in the result set. NDCG@K improves as K grows, plateauing at ~0.25 at full corpus retrieval.*
 
+### F.4 Multi-query evaluation (three saved queries, lemmatization strategy)
+
+Three queries — **uncertainity**, **wave**, and **music** — were saved with 1 relevant document each, evaluated at K = 5 using `tfidf_pagerank` ranking and the `lemma_stopwords` (rule-based normalization + stopword removal) preprocessing strategy. The sidebar confirms the active index has **16,184 index terms**, consistent with the lemmatization vocabulary.
+
+**Saved query set:**
+
+| Query | Relevant count | K | Ranking |
+|---|---:|---:|---|
+| uncertainity | 1 | 5 | tfidf_pagerank |
+| wave | 1 | 5 | tfidf_pagerank |
+| music | 1 | 5 | tfidf_pagerank |
+
+**Macro-averaged metrics across all three saved queries (lemmatization):**
+
+| Metric | Value |
+|---|---:|
+| Precision | 0.4667 |
+| Recall | 1.0000 |
+| F1 | 0.5556 |
+| P@K | 0.2000 |
+| R@K | 1.0000 |
+| MAP | 0.5111 |
+| MRR | 0.5111 |
+| NDCG@K | 0.6290 |
+
+![Multi-query evaluation — three queries, lemmatization strategy, macro-averaged metrics](screenshots/query_eval_multiple.png)
+
+*Figure F.4: Multi-query evaluation panel showing macro-averaged metrics across three saved queries (uncertainity, wave, music), each with 1 relevant document, K=5, tfidf_pagerank ranking, under the lemma_stopwords preprocessing strategy (16,184 index terms). Precision = 0.4667, Recall = 1.0, F1 = 0.5556, MAP = MRR = 0.5111, NDCG@K = 0.6290.*
+
+### F.5 Preprocessing strategy impact on evaluation metrics
+
+Running the same three-query set under **stemming** (`stem_stopwords`, 14,416 index terms) vs. **lemmatization** (`lemma_stopwords`, 16,184 index terms) reveals a significant difference in ranking quality:
+
+| Metric | Stemming | Lemmatization | Δ |
+|---|---:|---:|---:|
+| Precision | 0.2000 | **0.4667** | +0.2667 |
+| Recall | 1.0000 | 1.0000 | — |
+| F1 | 0.3333 | **0.5556** | +0.2223 |
+| P@K | 0.2000 | 0.2000 | — |
+| R@K | 1.0000 | 1.0000 | — |
+| MAP | 0.2889 | **0.5111** | +0.2222 |
+| MRR | 0.2889 | **0.5111** | +0.2222 |
+| NDCG@K | 0.4623 | **0.6290** | +0.1667 |
+
+Lemmatization improved ranking quality substantially: MAP and MRR increased by **+0.2222** (from 0.2889 to 0.5111), and NDCG@K rose by **+0.1667** (from 0.4623 to 0.6290). Recall was perfect (1.0) in both cases — both strategies can locate the relevant document within the full corpus — but lemmatization placed the relevant document at a significantly higher rank, improving precision-oriented metrics. This suggests that the rule-based normalization in `lemma_stopwords` preserves more semantically meaningful term variants than Porter stemming, resulting in better query-document matching for the Wikipedia corpus.
+
 ---
 
 ## G. Performance Analytics
@@ -389,7 +435,7 @@ The main learnings from the actual system execution on the 60-document Wikipedia
 - **Stemming materially changes the feature space.** Stemming + stopword removal reduced the vocabulary from 18,690 to 14,416 terms (22.9% reduction) on the actual corpus — more impactful than the controlled validation experiment suggested.
 - **Index construction scales well.** 60 documents with 16,184 terms were indexed in ~2 seconds with 30.2 doc/sec throughput, leaving search and recommendation at sub-20 ms latency.
 - **Content-based recommendation is effective without user data.** Topically coherent Top-5 recommendations (similarity ~0.57) were produced from TF-IDF vectors alone, confirming the value of rich document representations.
-- **The evaluation framework requires meaningful relevance judgments.** With only one saved relevance judgment for the "wave" query, MAP/MRR are single-query measurements. Adding more queries with explicit relevant document sets would produce more robust aggregate evaluation.
+- **The evaluation framework requires meaningful relevance judgments.** Multi-query evaluation was conducted across three saved queries (uncertainity, wave, music). Under lemmatization, macro-averaged MAP/MRR reached 0.5111 and NDCG@K reached 0.6290, providing a more robust aggregate measure than a single-query evaluation.
+- **Preprocessing strategy materially impacts ranking quality.** Switching from stemming to lemmatization on the same three-query set improved MAP/MRR by +0.2222 (0.2889 → 0.5111) and NDCG@K by +0.1667 (0.4623 → 0.6290), while both achieved perfect Recall = 1.0. Lemmatization preserves more semantically meaningful term variants, leading to better query-document matching.
 - **Crawling dominates total runtime (72 s vs. 2 s for everything else).** Future work could use pre-downloaded corpora or asynchronous crawling to reduce the bottleneck.
 - **Link-weight tuning matters.** With uniform PageRank, the default 0.20 link weight is reasonable; in a corpus with more varied link authority, a higher weight could improve ranking quality.
-
